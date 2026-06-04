@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="InventoryApi.Tests/InventoryApi.Tests.csproj" />
+  <Project Path="InventoryApi/InventoryApi.csproj" />
+  <Project Path="NotificaService/NotificaService.csproj" />
+</Solution>
