@@ -23,8 +23,6 @@ public class ProdottiController : ControllerBase
     public async Task<IActionResult> GetProdotti()
     {
         var prodotti = await _context.Prodotti.Include(p => p.Categoria).ToListAsync();
-
-        // Creiamo una risposta anonima per includere la giacenza calcolata al volo
         var risultato = new List<object>();
         foreach (var p in prodotti)
         {
@@ -46,7 +44,6 @@ public class ProdottiController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreaProdotto([FromBody] Prodotto prodotto)
     {
-        // Controlliamo se la categoria inserita esiste davvero
         var categoriaEsiste = await _context.Categorie.AnyAsync(c => c.Id == prodotto.CategoriaId);
         if (!categoriaEsiste)
             return BadRequest("La CategoriaId specificata non esiste.");
@@ -73,5 +70,58 @@ public class ProdottiController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetProdotto(int id)
+    {
+        var prodotto = await _context.Prodotti.Include(p => p.Categoria).FirstOrDefaultAsync(p => p.Id == id);
+
+        if (prodotto == null)
+            return NotFound("Prodotto non trovato.");
+
+        var giacenza = await _magazzinoService.GetGiacenzaDisponibileAsync(prodotto.Id);
+
+        return Ok(new
+        {
+            prodotto.Id,
+            prodotto.Nome,
+            prodotto.SKU,
+            prodotto.Prezzo,
+            Categoria = prodotto.Categoria?.Nome,
+            GiacenzaAttuale = giacenza
+        });
+    }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> AggiornaProdotto(int id, [FromBody] Prodotto prodottoAggiornato)
+    {
+        var prodottoEsistente = await _context.Prodotti.FindAsync(id);
+        if (prodottoEsistente == null)
+            return NotFound("Prodotto non trovato.");
+        if (prodottoEsistente.SKU != prodottoAggiornato.SKU)
+        {
+            var skuDuplicato = await _context.Prodotti.AnyAsync(p => p.SKU == prodottoAggiornato.SKU && p.Id != id);
+            if (skuDuplicato)
+                return BadRequest("Lo SKU inserito è già associato a un altro prodotto.");
+        }
+        prodottoEsistente.Nome = prodottoAggiornato.Nome;
+        prodottoEsistente.SKU = prodottoAggiornato.SKU;
+        prodottoEsistente.Prezzo = prodottoAggiornato.Prezzo;
+        prodottoEsistente.CategoriaId = prodottoAggiornato.CategoriaId;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> EliminaProdotto(int id)
+    {
+        var prodotto = await _context.Prodotti.FindAsync(id);
+        if (prodotto == null)
+            return NotFound("Prodotto non trovato.");
+
+        _context.Prodotti.Remove(prodotto);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { Messaggio = $"Prodotto {id} eliminato con successo." });
     }
 }
