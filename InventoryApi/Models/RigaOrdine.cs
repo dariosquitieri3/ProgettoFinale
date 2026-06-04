@@ -5,6 +5,7 @@ public class RigaOrdine
     public int Id { get; set; }
 
     public int OrdineId { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
     public Ordine? Ordine { get; set; }
 
     public int ProdottoId { get; set; }

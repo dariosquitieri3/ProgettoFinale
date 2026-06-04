@@ -31,13 +31,23 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<InventoryAPI.Data.AppDbContext>();
-
     if (!context.Categorie.Any())
     {
         context.Categorie.Add(new InventoryAPI.Models.Categoria
         {
             Nome = "Generale",
             Descrizione = "Categoria di test per il magazzino"
+        });
+        context.SaveChanges();
+    }
+    if (!context.Utenti.Any())
+    {
+        context.Utenti.Add(new InventoryAPI.Models.Utente
+        {
+            Nome = "Mario Rossi",
+            Email = "mario.rossi@test.com",
+            PasswordHash = "password_sicura_hash", 
+            Ruolo = "Cliente"
         });
         context.SaveChanges();
     }

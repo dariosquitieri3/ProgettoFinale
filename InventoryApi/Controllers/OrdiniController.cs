@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using InventoryAPI.Models;
 using InventoryAPI.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryAPI.Controllers;
 
@@ -13,22 +14,27 @@ public class OrdiniController : ControllerBase
     {
         _ordineService = ordineService;
     }
-
+    [HttpPost]
+    public async Task<IActionResult> CreaOrdine([FromBody] Ordine ordine)
+    {
+        var nuovoOrdine = await _ordineService.CreaOrdineAsync(ordine);
+        return Ok(nuovoOrdine);
+    }
     [HttpPost("{id}/conferma")]
     public async Task<IActionResult> ConfermaOrdine(int id)
     {
         try
         {
             await _ordineService.ConfermaOrdineAsync(id);
-            return Ok(new { messaggio = "Ordine confermato con successo e scorte aggiornate!" });
-        }
-        catch (ArgumentException ex)
-        {
-            return NotFound(new { messaggio = ex.Message });
+            return Ok(new { Messaggio = "Ordine confermato con successo e magazzino aggiornato!" });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { messaggio = ex.Message });
+            return BadRequest(new { Errore = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ex.Message);
         }
     }
 }
